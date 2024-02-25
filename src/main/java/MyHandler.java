@@ -7,14 +7,8 @@ import interfaces.Response;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class MyHandler implements Handler {
     private static final int N_THREADS = 4;
@@ -22,8 +16,7 @@ public class MyHandler implements Handler {
 
     private final Client client;
     private final ExecutorService executorService;
-    AtomicInteger retriesCount = new AtomicInteger(0);
-    AtomicReference<Duration> lastRequestTime = new AtomicReference<>();
+    private final AtomicInteger retriesCount = new AtomicInteger(0);
 
     public MyHandler(Client client) {
         this(client, N_THREADS);
@@ -53,7 +46,6 @@ public class MyHandler implements Handler {
                         return new Failure(Duration.between(start, Instant.now()), retriesCount.get());
                     } else if (obj instanceof Response.RetryAfter retryAfter) {
                         retriesCount.incrementAndGet();
-                        lastRequestTime.set(Duration.between(start, Instant.now()));
                         try {
                             Thread.sleep(retryAfter.delay().toMillis());
                         } catch (InterruptedException e) {
